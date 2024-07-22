@@ -1,6 +1,7 @@
 ﻿using Azure.Messaging;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using vechicalManagement.Data;
 using vechicalManagement.Models;
 
@@ -71,27 +72,46 @@ namespace vechicalManagement.Controllers
             try
             {
                 var existedVehicle = _context.Vehicles.FirstOrDefault(u => u.Id == id);
-                if(existedVehicle== null)
+                if (existedVehicle == null)
                 {
                     return BadRequest("Vechicle is not found");
                 }
                 existedVehicle.Status = vehicle.Status;
-                existedVehicle.PlateNumber= vehicle.PlateNumber;
-                existedVehicle.ServiceEndDate= vehicle.ServiceEndDate;
-                existedVehicle.VehicleName= vehicle.VehicleName;
-                existedVehicle.ServiceStartDate= vehicle.ServiceStartDate;  
-                existedVehicle.CustomerName= vehicle.CustomerName;
+                existedVehicle.PlateNumber = vehicle.PlateNumber;
+                existedVehicle.ServiceEndDate = vehicle.ServiceEndDate;
+                existedVehicle.VehicleName = vehicle.VehicleName;
+                existedVehicle.ServiceStartDate = vehicle.ServiceStartDate;
+                existedVehicle.CustomerName = vehicle.CustomerName;
                 existedVehicle.WorkerId = vehicle.WorkerId;
 
                 _context.Vehicles.Update(existedVehicle);
                 await _context.SaveChangesAsync();
-                return Ok(new {Message="Vehicle update successfully"});
+                return Ok(new { Message = "Vehicle update successfully" });
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return Ok(ex);
             }
         }
 
+
+        [HttpGet("allVehicle")]
+
+        public async Task<IActionResult> GetVehicles()
+        {
+            try
+            {
+                var vehicles = await _context.Vehicles.ToListAsync();
+                if (vehicles == null || !vehicles.Any())
+                {
+                    return NotFound("No vehicles found");
+                }
+                return Ok(vehicles);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"An error occurred while retrieving vehicles: {ex.Message}");
+            }
+        }
     }
 }

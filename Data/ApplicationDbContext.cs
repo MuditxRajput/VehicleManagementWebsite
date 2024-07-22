@@ -12,6 +12,8 @@ namespace vechicalManagement.Data
         }
         public DbSet<User> Users {  get; set; }
         public DbSet<Vehicle> Vehicles { get; set; }
+
+        public DbSet<ServiceRecord> serviceRecords { get; set; }
  
     }
 }
