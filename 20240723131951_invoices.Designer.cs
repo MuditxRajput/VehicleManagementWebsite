@@ -12,8 +12,8 @@ using vechicalManagement.Data;
 namespace vechicalManagement.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240722113216_api")]
-    partial class api
+    [Migration("20240723131951_invoices")]
+    partial class invoices
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -40,6 +40,9 @@ namespace vechicalManagement.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<int>("VehicleId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("WorkItemId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -123,33 +126,19 @@ namespace vechicalManagement.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<decimal>("Cost")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<int>("Cost")
+                        .HasColumnType("int");
 
-                    b.Property<string>("Name")
+                    b.Property<string>("Items")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("ServiceRecordId")
+                    b.Property<int>("VehicleId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ServiceRecordId");
-
-                    b.ToTable("WorkItem");
-                });
-
-            modelBuilder.Entity("vechicalManagement.Models.WorkItem", b =>
-                {
-                    b.HasOne("vechicalManagement.Models.ServiceRecord", null)
-                        .WithMany("WorkItems")
-                        .HasForeignKey("ServiceRecordId");
-                });
-
-            modelBuilder.Entity("vechicalManagement.Models.ServiceRecord", b =>
-                {
-                    b.Navigation("WorkItems");
+                    b.ToTable("WorkItems");
                 });
 #pragma warning restore 612, 618
         }

@@ -14,6 +14,7 @@ namespace vechicalManagement.Data
         public DbSet<Vehicle> Vehicles { get; set; }
 
         public DbSet<ServiceRecord> serviceRecords { get; set; }
- 
+        public DbSet<WorkItem> WorkItems { get; set; }
+
     }
 }
