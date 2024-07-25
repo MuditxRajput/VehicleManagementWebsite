@@ -24,6 +24,7 @@ namespace vechicalManagement.Controllers
         {
             try
             {
+
                 // check the vehicle is already add or not...
                 var existedVehicle = _context.Vehicles.FirstOrDefault(u => u.PlateNumber == vehicle.PlateNumber);
                 if (existedVehicle != null)
@@ -43,7 +44,7 @@ namespace vechicalManagement.Controllers
 
         [HttpDelete("deleteVehicle")]
 
-        public async Task<IActionResult> deleteVehicle(int id)
+        public async Task<IActionResult> deleteVehicle([FromQuery]int id)
         {
             try
             {
