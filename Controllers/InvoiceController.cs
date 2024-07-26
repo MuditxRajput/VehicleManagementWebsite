@@ -23,7 +23,7 @@ namespace vechicalManagement.Controllers
                 FirstOrDefault(u => u.VehicleId == vehicleId);
            
             records.VehicleId = vehicleId;
-            records.ServiceDate = DateTime.UtcNow;
+            
             records.Price = workItemUsedInVehicle.Cost;
             records.WorkItemId = workItemUsedInVehicle.Id;
 

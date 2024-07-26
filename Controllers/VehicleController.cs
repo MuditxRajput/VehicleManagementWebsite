@@ -1,7 +1,9 @@
-﻿using Azure.Messaging;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using System.Threading.Tasks;
 using vechicalManagement.Data;
 using vechicalManagement.Models;
 
@@ -9,109 +11,148 @@ namespace vechicalManagement.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class VehicleController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
 
         public VehicleController(ApplicationDbContext context)
-
         {
             _context = context;
         }
-        [HttpPost("addVehicle")]
 
-        public async Task<IActionResult> addVechicle(Vehicle vehicle)
+        [HttpPost("addVehicle")]
+        [Authorize(Roles = "admin")]
+        public async Task<IActionResult> AddVehicle([FromBody] Vehicle vehicle)
         {
+            if (vehicle == null)
+            {
+                return BadRequest("Invalid vehicle data.");
+            }
+
             try
             {
+                // Check if the vehicle already exists
+                var existingVehicle = await _context.Vehicles
+                    .FirstOrDefaultAsync(v => v.PlateNumber == vehicle.PlateNumber);
 
-                // check the vehicle is already add or not...
-                var existedVehicle = _context.Vehicles.FirstOrDefault(u => u.PlateNumber == vehicle.PlateNumber);
-                if (existedVehicle != null)
+                if (existingVehicle != null)
                 {
-                    return BadRequest("Vehicle is already exist");
+                    return BadRequest("Vehicle already exists.");
                 }
-                var vehicleFromDatabase = _context.Vehicles.Add(vehicle);
-                await _context.SaveChangesAsync();
-                return Ok(new { Message = "Vehicle is added" });
 
+                await _context.Vehicles.AddAsync(vehicle);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { Message = "Vehicle added successfully." });
             }
             catch (Exception ex)
             {
-                return Ok(ex);
+                // Log the exception (consider using a logging framework here)
+                return StatusCode(StatusCodes.Status500InternalServerError, new { Message = $"An error occurred: {ex.Message}" });
             }
         }
 
         [HttpDelete("deleteVehicle")]
-
-        public async Task<IActionResult> deleteVehicle([FromQuery]int id)
+        [Authorize(Roles = "admin")]
+        public async Task<IActionResult> DeleteVehicle([FromQuery] int id)
         {
             try
             {
-                var existedVehicle = _context.Vehicles.FirstOrDefault(u => u.Id == id);
-                if (existedVehicle == null)
+                var existingVehicle = await _context.Vehicles
+                    .FirstOrDefaultAsync(v => v.Id == id);
+
+                if (existingVehicle == null)
                 {
-                    return BadRequest("Vehicle is not found...");
+                    return NotFound("Vehicle not found.");
                 }
-                _context.Vehicles.Remove(existedVehicle);
+
+                _context.Vehicles.Remove(existingVehicle);
                 await _context.SaveChangesAsync();
 
-                return Ok(new { Message = "Vehicle is delete" });
+                return Ok(new { Message = "Vehicle deleted successfully." });
             }
             catch (Exception ex)
             {
-                {
-                    return Ok(ex);
-                }
+                // Log the exception (consider using a logging framework here)
+                return StatusCode(StatusCodes.Status500InternalServerError, new { Message = $"An error occurred: {ex.Message}" });
             }
         }
-
 
         [HttpPost("updateVehicle")]
-        public async Task<IActionResult> updateVehicle(int id, [FromBody] Vehicle vehicle)
+        [Authorize(Roles = "admin")]
+        public async Task<IActionResult> UpdateVehicle(int id, [FromBody] Vehicle vehicle)
         {
+            if (vehicle == null || vehicle.Id != id)
+            {
+                return BadRequest("Invalid vehicle data.");
+            }
+
             try
             {
-                var existedVehicle = _context.Vehicles.FirstOrDefault(u => u.Id == id);
-                if (existedVehicle == null)
-                {
-                    return BadRequest("Vechicle is not found");
-                }
-                existedVehicle.Status = vehicle.Status;
-                existedVehicle.PlateNumber = vehicle.PlateNumber;
-                existedVehicle.ServiceEndDate = vehicle.ServiceEndDate;
-                existedVehicle.VehicleName = vehicle.VehicleName;
-                existedVehicle.ServiceStartDate = vehicle.ServiceStartDate;
-                existedVehicle.CustomerName = vehicle.CustomerName;
-                existedVehicle.WorkerId = vehicle.WorkerId;
+                var existingVehicle = await _context.Vehicles
+                    .FirstOrDefaultAsync(v => v.Id == id);
 
-                _context.Vehicles.Update(existedVehicle);
+                if (existingVehicle == null)
+                {
+                    return NotFound("Vehicle not found.");
+                }
+
+                // Update vehicle details
+                existingVehicle.Status = vehicle.Status;
+                existingVehicle.PlateNumber = vehicle.PlateNumber;
+                existingVehicle.ServiceEndDate = vehicle.ServiceEndDate;
+                existingVehicle.VehicleName = vehicle.VehicleName;
+                existingVehicle.ServiceStartDate = vehicle.ServiceStartDate;
+                existingVehicle.CustomerName = vehicle.CustomerName;
+                existingVehicle.WorkerId = vehicle.WorkerId;
+
+                _context.Vehicles.Update(existingVehicle);
                 await _context.SaveChangesAsync();
-                return Ok(new { Message = "Vehicle update successfully" });
+
+                return Ok(new { Message = "Vehicle updated successfully." });
             }
             catch (Exception ex)
             {
-                return Ok(ex);
+                // Log the exception (consider using a logging framework here)
+                return StatusCode(StatusCodes.Status500InternalServerError, new { Message = $"An error occurred: {ex.Message}" });
             }
         }
 
-
         [HttpGet("allVehicle")]
-
         public async Task<IActionResult> GetVehicles()
         {
             try
             {
-                var vehicles = await _context.Vehicles.ToListAsync();
-                if (vehicles == null || !vehicles.Any())
+                var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+                var userId = User.FindFirst("UserId")?.Value;
+
+                if (string.IsNullOrEmpty(userRole) || string.IsNullOrEmpty(userId))
                 {
-                    return NotFound("No vehicles found");
+                    return Unauthorized("User role or ID not found in the token.");
                 }
-                return Ok(vehicles);
+
+                if (userRole == "admin")
+                {
+                    var vehicles = await _context.Vehicles.ToListAsync();
+                    return Ok(vehicles);
+                }
+                else if (userRole == "serviceAdvisor")
+                {
+                    var vehicles = await _context.Vehicles
+                        .Where(v => v.WorkerId.ToString() == userId)
+                        .ToListAsync();
+                    return Ok(vehicles);
+                }
+                else
+                {
+                    return Forbid("User does not have the required role.");
+                }
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"An error occurred while retrieving vehicles: {ex.Message}");
+                // Log the exception (consider using a logging framework here)
+                return StatusCode(StatusCodes.Status500InternalServerError, new { Message = $"An error occurred: {ex.Message}" });
             }
         }
     }

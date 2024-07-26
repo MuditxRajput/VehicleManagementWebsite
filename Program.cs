@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using vechicalManagement.Data;
-using Microsoft.AspNetCore.Cors;
+using vechicalManagement;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -47,7 +47,8 @@ builder.Services.AddCors(options =>
     {
         builder.WithOrigins("http://localhost:4200")
                .AllowAnyHeader()
-               .AllowAnyMethod();
+               .AllowAnyMethod()
+               .AllowCredentials();
     });
 });
 
@@ -64,8 +65,13 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseAuthentication();
+// Ensure UseCors is called before UseAuthentication and UseAuthorization
 app.UseCors("AllowAngularOrigins");
+
+app.UseAuthentication();
 app.UseAuthorization();
+
+// Map controllers
 app.MapControllers();
+
 app.Run();

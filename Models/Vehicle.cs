@@ -13,7 +13,7 @@ namespace vechicalManagement.Models
         public string Status { get; set; }
 
         public string CustomerName { get; set; }
-        public string WorkerId { get; set; }
+        public int WorkerId { get; set; }
 
 
     }

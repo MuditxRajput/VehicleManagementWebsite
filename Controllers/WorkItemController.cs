@@ -21,7 +21,7 @@ namespace vechicalManagement.Controllers
             var vehicle = await _context.Vehicles.FindAsync(vehicleId);
             if (vehicle == null)
             {
-                return BadRequest("Vehicle not found.");
+                return NotFound("Vehicle not found.");
             }
 
             item.VehicleId = vehicleId;
@@ -45,6 +45,5 @@ namespace vechicalManagement.Controllers
 
             return Ok(new { message = "Work item added successfully." });
         }
-
     }
 }
