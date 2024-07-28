@@ -45,5 +45,18 @@ namespace vechicalManagement.Controllers
 
             return Ok(new { message = "Work item added successfully." });
         }
+
+        [HttpGet("getWorkItembyId")]
+
+        public async Task<IActionResult> getWorkItemById([FromQuery] int id)
+        {
+            var item = _context.WorkItems.FirstOrDefault(u => u.Id == id);
+            if(item == null)
+            {
+                return NotFound();
+            }
+            return Ok(item);
+
+        }
     }
 }

@@ -155,5 +155,18 @@ namespace vechicalManagement.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, new { Message = $"An error occurred: {ex.Message}" });
             }
         }
+        [HttpGet("getVehicleById")]
+        [Authorize(Roles = "admin")]
+        public async Task<IActionResult> getVehicleId([FromQuery] int id)
+        {
+            var vehicle = await _context.Vehicles.FirstOrDefaultAsync(u => u.Id == id);
+            if(vehicle == null)
+            {
+                return BadRequest("not fetching");
+            }
+
+            return Ok(vehicle);
+        }
+
     }
 }
